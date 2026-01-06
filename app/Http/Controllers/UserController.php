@@ -6,7 +6,6 @@ use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class UserController extends Controller {
     protected User $user;
@@ -32,14 +31,17 @@ class UserController extends Controller {
     }
 
     public function show(int $id): JsonResponse {
-        $user = $this->user->query()->with(['userType'])->find($id);
+        $user = $this->user->query()
+            ->with(['userType'])
+            ->withTrashed()
+            ->find($id);
 
         if (!$user) {
             return response()->json([
                 'error' => 'O usuário informado não existe na base de dados'
             ], 404);
         }
-        return response()->json($user);
+        return response()->json($user, 200);
     }
 
     public function update(UpdateUserRequest $request, int $id): JsonResponse {
@@ -66,11 +68,60 @@ class UserController extends Controller {
 
         try {
             $user->update($validatedData);
-            return response()->json($user);
+            return response()->json($user, 200);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erro ao processo a solicitação.',
                 'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function softDelete(int $id) {
+        $user = $this->user->query()
+            ->with(['userType'])
+            ->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'O usuário informado não existe na base de dados'
+            ], 404);
+        }
+
+        try {
+            $user->update(['status' => 'Inativo']);
+            $user->delete();
+            return response()->json([
+                'message' => 'Registro desativado com sucesso!'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erro ao processar a solicitação',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function restoreUser(int $id) {
+        $user = $this->user->query()
+            ->with(['userType'])
+            ->withTrashed()
+            ->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'O usuário informado não existe na base de dados'
+            ], 404);
+        }
+
+        try {
+            $user->update(['status' => 'Ativo']);
+            $user->restore();
+            return response()->json($user, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erro ao processar a solicitação',
+                'message' => $e->getMessage()
             ], 500);
         }
     }
