@@ -13,3 +13,4 @@ Route::get('/users/softDelete/{id}', [UserController::class, 'softDelete']);
 Route::get('/users/restoreUser/{id}', [UserController::class, 'restoreUser']);
 
 Route::apiResource('/customers', CustomerController::class);
+Route::delete('/customers/delete/multiple', [CustomerController::class, 'deleteMutiple']);

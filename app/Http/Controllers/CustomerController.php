@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Customer\DeleteMultipleCustomerRequest;
 use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Models\Customer;
@@ -96,6 +97,24 @@ class CustomerController extends Controller {
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erro ao processar a solicitação.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteMutiple(DeleteMultipleCustomerRequest $request): JsonResponse {
+        $validatedData = $request->validated();
+
+        try {
+            $this->customer->query()
+                ->whereIn('id', $validatedData['id'])
+                ->delete();
+            return response()->json([
+                'message' => 'Registros excluídos com sucesso!'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erro ao processo a solicitação.',
                 'message' => $e->getMessage()
             ], 500);
         }
